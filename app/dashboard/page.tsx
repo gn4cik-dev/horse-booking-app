@@ -18,7 +18,7 @@ type Booking = {
   username: string;
 };
 
-export default function Dashboard() {
+export default function Home() {
 
   const [user, setUser] =
     useState<any>(null);
@@ -282,6 +282,7 @@ export default function Dashboard() {
       : "";
 
   return (
+
     <div className="max-w-6xl mx-auto p-10">
 
       <div className="flex items-center justify-between mb-10">
@@ -341,6 +342,7 @@ export default function Dashboard() {
               "bg-indigo-600 text-white rounded-full"
           }}
           components={{
+
             DayButton: ({
               day,
               ...props
@@ -437,6 +439,7 @@ export default function Dashboard() {
               );
 
             }
+
           }}
         />
 
@@ -582,5 +585,7 @@ export default function Dashboard() {
       </div>
 
     </div>
+
   );
+
 }
