@@ -350,7 +350,7 @@ export default function Home() {
         <div>
 
           <h1 className="text-4xl font-bold">
-            📅 Rezerwacje koni
+            📅 Horsysie Rezerwacje
           </h1>
 
           <p className="mt-3 text-lg">
@@ -495,6 +495,8 @@ export default function Home() {
                                 w-2
                                 h-2
                                 rounded-full
+                                border
+                                border-white
                                 ${getDotColor(
                                   horse?.name ||
                                     ""
