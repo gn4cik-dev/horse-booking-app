@@ -12,28 +12,62 @@ type Horse = {
 };
 
 type Booking = {
+  id?: string;
   horse_id: string;
   booking_date: string;
   username: string;
 };
 
-export default function Dashboard() {
+export default function Home() {
 
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] =
+    useState<any>(null);
 
-  const [horses, setHorses] = useState<Horse[]>([]);
+  const [horses, setHorses] =
+    useState<Horse[]>([]);
 
   const [bookings, setBookings] =
     useState<Booking[]>([]);
 
   const [selectedDate, setSelectedDate] =
-    useState<Date | undefined>(new Date());
+    useState<Date | undefined>(
+      new Date()
+    );
 
   useEffect(() => {
 
     loadUser();
     loadHorses();
     loadBookings();
+
+    const channel =
+      supabase.channel(
+        "realtime-bookings"
+      );
+
+    channel
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "bookings"
+        },
+        async () => {
+
+          await loadBookings();
+
+        }
+      )
+      .subscribe();
+
+    return () => {
+
+      supabase.removeChannel(
+        channel
+      );
+
+    };
 
   }, []);
 
@@ -49,9 +83,10 @@ export default function Dashboard() {
 
   async function loadHorses() {
 
-    const { data } = await supabase
-      .from("horses")
-      .select("*");
+    const { data } =
+      await supabase
+        .from("horses")
+        .select("*");
 
     if (data) {
       setHorses(data);
@@ -61,9 +96,10 @@ export default function Dashboard() {
 
   async function loadBookings() {
 
-    const { data } = await supabase
-      .from("bookings")
-      .select("*");
+    const { data } =
+      await supabase
+        .from("bookings")
+        .select("*");
 
     if (data) {
       setBookings(data);
@@ -71,11 +107,22 @@ export default function Dashboard() {
 
   }
 
-  function formatDate(date: Date) {
+  function formatDate(
+    date: Date
+  ) {
 
-    return date
-      .toISOString()
-      .split("T")[0];
+    const year =
+      date.getFullYear();
+
+    const month = String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+
+    const day = String(
+      date.getDate()
+    ).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
 
   }
 
@@ -86,8 +133,10 @@ export default function Dashboard() {
 
     return bookings.find(
       (booking) =>
-        booking.horse_id === horseId &&
-        booking.booking_date === date
+        booking.horse_id ===
+          horseId &&
+        booking.booking_date ===
+          date
     );
 
   }
@@ -96,21 +145,34 @@ export default function Dashboard() {
     horseId: string
   ) {
 
-    if (!selectedDate) {
-      return;
-    }
+    if (!selectedDate) return;
 
-    const date = formatDate(selectedDate);
+    const date =
+      formatDate(selectedDate);
 
-    const existingBooking = isBooked(
-      horseId,
-      date
-    );
+    const existingBooking =
+      isBooked(
+        horseId,
+        date
+      );
 
     if (existingBooking) {
 
       alert(
         "Ten koń jest już zarezerwowany."
+      );
+
+      return;
+
+    }
+
+    const today =
+      formatDate(new Date());
+
+    if (date < today) {
+
+      alert(
+        "Nie można rezerwować przeszłych dat."
       );
 
       return;
@@ -123,17 +185,19 @@ export default function Dashboard() {
 
     if (!user) return;
 
-    const { error } = await supabase
-      .from("bookings")
-      .insert([
-        {
-          horse_id: horseId,
-          booking_date: date,
-          user_id: user.id,
-          username:
-            user.user_metadata.full_name
-        }
-      ]);
+    const { error } =
+      await supabase
+        .from("bookings")
+        .insert([
+          {
+            horse_id: horseId,
+            booking_date: date,
+            user_id: user.id,
+            username:
+              user.user_metadata
+                .full_name
+          }
+        ]);
 
     if (error) {
 
@@ -152,19 +216,26 @@ export default function Dashboard() {
 
     if (!selectedDate) return;
 
-    const date = formatDate(selectedDate);
+    const date =
+      formatDate(selectedDate);
 
-    const confirmDelete = confirm(
-      "Anulować rezerwację?"
-    );
+    const confirmDelete =
+      confirm(
+        "Anulować rezerwację?"
+      );
 
-    if (!confirmDelete) return;
+    if (!confirmDelete)
+      return;
 
-    const { error } = await supabase
-      .from("bookings")
-      .delete()
-      .eq("horse_id", horseId)
-      .eq("booking_date", date);
+    const { error } =
+      await supabase
+        .from("bookings")
+        .delete()
+        .eq("horse_id", horseId)
+        .eq(
+          "booking_date",
+          date
+        );
 
     if (error) {
 
@@ -177,71 +248,41 @@ export default function Dashboard() {
 
   }
 
-  function getDotsForDate(
-    date: Date
+  function getDotColor(
+    horseName: string
   ) {
 
-    const formattedDate =
-      formatDate(date);
+    if (
+      horseName === "Baskara"
+    ) {
+      return "bg-black";
+    }
 
-    const dayBookings =
-      bookings.filter(
-        (booking) =>
-          booking.booking_date ===
-          formattedDate
-      );
+    if (
+      horseName === "Nostrzyk"
+    ) {
+      return "bg-red-500";
+    }
 
-    return (
-      <div className="flex justify-center gap-1 mt-1">
+    if (
+      horseName === "Warek"
+    ) {
+      return "bg-yellow-400";
+    }
 
-        {dayBookings.map((booking) => {
-
-          const horse = horses.find(
-            (h) =>
-              h.id === booking.horse_id
-          );
-
-          let color =
-            "bg-gray-400";
-
-          if (
-            horse?.name === "Baskara"
-          ) {
-            color = "bg-black";
-          }
-
-          if (
-            horse?.name === "Nostrzyk"
-          ) {
-            color = "bg-red-500";
-          }
-
-          if (
-            horse?.name === "Warek"
-          ) {
-            color = "bg-yellow-400";
-          }
-
-          return (
-            <div
-              key={booking.horse_id}
-              className={`w-2 h-2 rounded-full ${color}`}
-            />
-          );
-
-        })}
-
-      </div>
-    );
+    return "bg-gray-400";
 
   }
 
   const selectedDateString =
     selectedDate
-      ? formatDate(selectedDate)
+      ? formatDate(
+          selectedDate
+        )
       : "";
 
   return (
+
     <div className="max-w-6xl mx-auto p-10">
 
       <div className="flex items-center justify-between mb-10">
@@ -261,7 +302,8 @@ export default function Dashboard() {
               <span className="font-bold">
 
                 {
-                  user.user_metadata
+                  user
+                    .user_metadata
                     .full_name
                 }
 
@@ -294,30 +336,101 @@ export default function Dashboard() {
           mode="single"
           selected={selectedDate}
           onSelect={setSelectedDate}
-          modifiers={{
-            booked: bookings.map(
-              (booking) =>
-                new Date(
-                  booking.booking_date
-                )
-            )
+          className="text-black"
+          modifiersClassNames={{
+            selected:
+              "bg-indigo-600 text-white rounded-full"
           }}
           components={{
-            DayContent: (props) => (
 
-              <div>
+            DayButton: ({
+              day,
+              ...props
+            }) => {
 
-                <div>
-                  {props.date.getDate()}
-                </div>
+              const formattedDate =
+                formatDate(day.date);
 
-                {getDotsForDate(
-                  props.date
-                )}
+              const dayBookings =
+                bookings.filter(
+                  (booking) =>
+                    booking.booking_date ===
+                    formattedDate
+                );
 
-              </div>
+              return (
 
-            )
+                <button
+                  {...props}
+                  className="
+                    relative
+                    w-10
+                    h-10
+                    hover:bg-indigo-100
+                    rounded-full
+                    flex
+                    items-center
+                    justify-center
+                  "
+                >
+
+                  {day.date.getDate()}
+
+                  {dayBookings.length > 0 && (
+
+                    <div
+                      className="
+                        absolute
+                        bottom-0
+                        left-1/2
+                        -translate-x-1/2
+                        flex
+                        gap-1
+                      "
+                    >
+
+                      {dayBookings.map(
+                        (booking) => {
+
+                          const horse =
+                            horses.find(
+                              (h) =>
+                                h.id ===
+                                booking.horse_id
+                            );
+
+                          return (
+
+                            <div
+                              key={
+                                booking.horse_id
+                              }
+                              className={`
+                                w-2
+                                h-2
+                                rounded-full
+                                ${getDotColor(
+                                  horse?.name ||
+                                    ""
+                                )}
+                              `}
+                            />
+
+                          );
+
+                        }
+                      )}
+
+                    </div>
+
+                  )}
+
+                </button>
+
+              );
+
+            }
+
           }}
         />
 
@@ -325,105 +438,138 @@ export default function Dashboard() {
 
       <div className="grid gap-5">
 
-        {horses.map((horse) => {
+        {horses.map(
+          (horse) => {
 
-          const booking = isBooked(
-            horse.id,
-            selectedDateString
-          );
+            const booking =
+              isBooked(
+                horse.id,
+                selectedDateString
+              );
 
-          return (
+            return (
 
-            <div
-              key={horse.id}
-              className="border rounded-2xl p-6 flex items-center justify-between"
-            >
+              <div
+                key={horse.id}
+                className="
+                  border
+                  rounded-2xl
+                  p-6
+                  flex
+                  items-center
+                  justify-between
+                "
+              >
 
-              <div>
+                <div>
 
-                <h2 className="text-2xl font-bold">
-                  🐴 {horse.name}
-                </h2>
+                  <h2 className="text-2xl font-bold">
+                    🐴 {horse.name}
+                  </h2>
+
+                  {booking ? (
+
+                    <div className="mt-2">
+
+                      <p className="text-red-600 font-bold">
+                        🔴 Zajęty
+                      </p>
+
+                      <p>
+                        {booking.username}
+                      </p>
+
+                    </div>
+
+                  ) : (
+
+                    <p className="text-green-600 font-bold mt-2">
+                      🟢 Wolny
+                    </p>
+
+                  )}
+
+                </div>
 
                 {booking ? (
 
-                  <div className="mt-2">
-
-                    <p className="text-red-600 font-bold">
-                      🔴 Zajęty
-                    </p>
-
-                    <p>
-                      {booking.username}
-                    </p>
-
-                  </div>
+                  <button
+                    onClick={() =>
+                      cancelBooking(
+                        horse.id
+                      )
+                    }
+                    className="
+                      bg-red-600
+                      text-white
+                      px-5
+                      py-3
+                      rounded-xl
+                    "
+                  >
+                    Anuluj
+                  </button>
 
                 ) : (
 
-                  <p className="text-green-600 font-bold mt-2">
-                    🟢 Wolny
-                  </p>
+                  <button
+                    onClick={() =>
+                      createBooking(
+                        horse.id
+                      )
+                    }
+                    className="
+                      bg-indigo-600
+                      text-white
+                      px-5
+                      py-3
+                      rounded-xl
+                    "
+                  >
+                    Rezerwuj
+                  </button>
 
                 )}
 
               </div>
 
-              {booking ? (
+            );
 
-                <button
-                  onClick={() =>
-                    cancelBooking(
-                      horse.id
-                    )
-                  }
-                  className="bg-red-600 text-white px-5 py-3 rounded-xl"
-                >
-                  Anuluj
-                </button>
-
-              ) : (
-
-                <button
-                  onClick={() =>
-                    createBooking(
-                      horse.id
-                    )
-                  }
-                  className="bg-indigo-600 text-white px-5 py-3 rounded-xl"
-                >
-                  Rezerwuj
-                </button>
-
-              )}
-
-            </div>
-
-          );
-
-        })}
+          }
+        )}
 
       </div>
 
       <div className="mt-10 flex gap-6">
 
         <div className="flex items-center gap-2">
+
           <div className="w-3 h-3 rounded-full bg-black" />
+
           <p>Baskara</p>
+
         </div>
 
         <div className="flex items-center gap-2">
+
           <div className="w-3 h-3 rounded-full bg-red-500" />
+
           <p>Nostrzyk</p>
+
         </div>
 
         <div className="flex items-center gap-2">
+
           <div className="w-3 h-3 rounded-full bg-yellow-400" />
+
           <p>Warek</p>
+
         </div>
 
       </div>
 
     </div>
+
   );
+
 }
