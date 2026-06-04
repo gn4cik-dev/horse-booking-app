@@ -71,6 +71,22 @@ export default function Home() {
 
   }, []);
 
+  async function loginWithDiscord() {
+
+    await supabase.auth.signInWithOAuth({
+      provider: "discord"
+    });
+
+  }
+
+  async function logout() {
+
+    await supabase.auth.signOut();
+
+    location.reload();
+
+  }
+
   async function loadUser() {
 
     const {
@@ -281,11 +297,55 @@ export default function Home() {
         )
       : "";
 
+  if (!user) {
+
+    return (
+
+      <div className="
+        h-screen
+        flex
+        items-center
+        justify-center
+        bg-gray-100
+      ">
+
+        <button
+          onClick={loginWithDiscord}
+          className="
+            bg-indigo-600
+            text-white
+            px-8
+            py-5
+            rounded-2xl
+            text-2xl
+            font-bold
+            shadow-lg
+          "
+        >
+
+          Zaloguj Discordem
+
+        </button>
+
+      </div>
+
+    );
+
+  }
+
   return (
 
-    <div className="max-w-6xl mx-auto p-10">
+    <div className="max-w-6xl mx-auto p-5 md:p-10">
 
-      <div className="flex items-center justify-between mb-10">
+      <div className="
+        flex
+        flex-col
+        md:flex-row
+        md:items-center
+        md:justify-between
+        gap-5
+        mb-10
+      ">
 
         <div>
 
@@ -293,29 +353,29 @@ export default function Home() {
             📅 Rezerwacje koni
           </h1>
 
-          {user && (
+          <p className="mt-3 text-lg">
 
-            <p className="mt-3 text-lg">
+            Zalogowano jako{" "}
 
-              Zalogowano jako{" "}
+            <span className="font-bold">
 
-              <span className="font-bold">
+              {
+                user
+                  .user_metadata
+                  .full_name
+              }
 
-                {
-                  user
-                    .user_metadata
-                    .full_name
-                }
+            </span>
 
-              </span>
-
-            </p>
-
-          )}
+          </p>
 
         </div>
 
-        {user && (
+        <div className="
+          flex
+          items-center
+          gap-4
+        ">
 
           <img
             src={
@@ -323,14 +383,40 @@ export default function Home() {
                 .avatar_url
             }
             alt="avatar"
-            className="w-16 h-16 rounded-full"
+            className="
+              w-16
+              h-16
+              rounded-full
+            "
           />
 
-        )}
+          <button
+            onClick={logout}
+            className="
+              bg-gray-200
+              px-4
+              py-2
+              rounded-xl
+            "
+          >
+
+            Wyloguj
+
+          </button>
+
+        </div>
 
       </div>
 
-      <div className="bg-white rounded-3xl p-6 shadow mb-10">
+      <div className="
+        bg-white
+        rounded-3xl
+        p-4
+        md:p-6
+        shadow
+        mb-10
+        overflow-auto
+      ">
 
         <DayPicker
           mode="single"
@@ -456,8 +542,11 @@ export default function Home() {
                   rounded-2xl
                   p-6
                   flex
-                  items-center
-                  justify-between
+                  flex-col
+                  md:flex-row
+                  md:items-center
+                  md:justify-between
+                  gap-5
                 "
               >
 
@@ -507,7 +596,9 @@ export default function Home() {
                       rounded-xl
                     "
                   >
+
                     Anuluj
+
                   </button>
 
                 ) : (
@@ -526,7 +617,9 @@ export default function Home() {
                       rounded-xl
                     "
                   >
+
                     Rezerwuj
+
                   </button>
 
                 )}
@@ -540,30 +633,26 @@ export default function Home() {
 
       </div>
 
-      <div className="mt-10 flex gap-6">
+      <div className="
+        mt-10
+        flex
+        flex-wrap
+        gap-6
+      ">
 
         <div className="flex items-center gap-2">
-
           <div className="w-3 h-3 rounded-full bg-black" />
-
           <p>Baskara</p>
-
         </div>
 
         <div className="flex items-center gap-2">
-
           <div className="w-3 h-3 rounded-full bg-red-500" />
-
           <p>Nostrzyk</p>
-
         </div>
 
         <div className="flex items-center gap-2">
-
           <div className="w-3 h-3 rounded-full bg-yellow-400" />
-
           <p>Warek</p>
-
         </div>
 
       </div>
