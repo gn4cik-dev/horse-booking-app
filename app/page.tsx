@@ -6,6 +6,10 @@ import "react-day-picker/dist/style.css";
 
 import { supabase } from "@/lib/supabase";
 
+const ADMINS = [
+  "TU_DISCORD_USER_ID"
+];
+
 type Horse = {
   id: string;
   name: string;
@@ -16,6 +20,7 @@ type Booking = {
   horse_id: string;
   booking_date: string;
   username: string;
+  user_id: string;
 };
 
 export default function Home() {
@@ -235,6 +240,37 @@ export default function Home() {
     const date =
       formatDate(selectedDate);
 
+    const booking =
+      isBooked(
+        horseId,
+        date
+      );
+
+    if (!booking) return;
+
+    const isAdmin =
+      user &&
+      ADMINS.includes(
+        user.id
+      );
+
+    const isOwner =
+      booking.user_id ===
+      user.id;
+
+    if (
+      !isOwner &&
+      !isAdmin
+    ) {
+
+      alert(
+        "Nie możesz anulować cudzej rezerwacji."
+      );
+
+      return;
+
+    }
+
     const confirmDelete =
       confirm(
         "Anulować rezerwację?"
@@ -297,6 +333,12 @@ export default function Home() {
         )
       : "";
 
+  const isAdmin =
+    user &&
+    ADMINS.includes(
+      user.id
+    );
+
   if (!user) {
 
     return (
@@ -350,7 +392,7 @@ export default function Home() {
         <div>
 
           <h1 className="text-4xl font-bold">
-            📅 Horsysie Rezerwacje
+            📅 Rezerwacje koni
           </h1>
 
           <p className="mt-3 text-lg">
@@ -535,6 +577,14 @@ export default function Home() {
                 selectedDateString
               );
 
+            const canCancel =
+              booking &&
+              (
+                booking.user_id ===
+                  user.id ||
+                isAdmin
+              );
+
             return (
 
               <div
@@ -584,24 +634,39 @@ export default function Home() {
 
                 {booking ? (
 
-                  <button
-                    onClick={() =>
-                      cancelBooking(
-                        horse.id
-                      )
-                    }
-                    className="
-                      bg-red-600
-                      text-white
-                      px-5
-                      py-3
-                      rounded-xl
-                    "
-                  >
+                  canCancel ? (
 
-                    Anuluj
+                    <button
+                      onClick={() =>
+                        cancelBooking(
+                          horse.id
+                        )
+                      }
+                      className="
+                        bg-red-600
+                        text-white
+                        px-5
+                        py-3
+                        rounded-xl
+                      "
+                    >
 
-                  </button>
+                      Anuluj
+
+                    </button>
+
+                  ) : (
+
+                    <div className="
+                      text-gray-400
+                      font-semibold
+                    ">
+
+                      Zarezerwowane
+
+                    </div>
+
+                  )
 
                 ) : (
 
@@ -643,17 +708,17 @@ export default function Home() {
       ">
 
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-black" />
+          <div className="w-3 h-3 rounded-full bg-black border border-white" />
           <p>Baskara</p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
+          <div className="w-3 h-3 rounded-full bg-red-500 border border-white" />
           <p>Nostrzyk</p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-yellow-400" />
+          <div className="w-3 h-3 rounded-full bg-yellow-400 border border-white" />
           <p>Warek</p>
         </div>
 
