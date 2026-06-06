@@ -169,7 +169,7 @@ export default function Home() {
     if (!user) {
 
       alert(
-        "Zaloguj się Discordem aby rezerwować."
+        "Zaloguj się"
       );
 
       await loginWithDiscord();
@@ -213,10 +213,10 @@ export default function Home() {
     }
 
     const {
-      data: { user }
+      data: { user: currentUser }
     } = await supabase.auth.getUser();
 
-    if (!user) return;
+    if (!currentUser) return;
 
     const { error } =
       await supabase
@@ -225,9 +225,9 @@ export default function Home() {
           {
             horse_id: horseId,
             booking_date: date,
-            user_id: user.id,
+            user_id: currentUser.id,
             username:
-              user.user_metadata
+              currentUser.user_metadata
                 .full_name
           }
         ]);
@@ -250,7 +250,7 @@ export default function Home() {
     if (!user) {
 
       alert(
-        "Zaloguj się Discordem."
+        "Zaloguj się."
       );
 
       await loginWithDiscord();
@@ -425,7 +425,7 @@ export default function Home() {
         <div>
 
           <h1 className="text-4xl font-bold">
-            📅 Rezerwacje koni
+            📅 Horsysie rezerwacje
           </h1>
 
           {user && (
