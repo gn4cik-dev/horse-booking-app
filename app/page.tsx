@@ -7,7 +7,7 @@ import "react-day-picker/dist/style.css";
 import { supabase } from "@/lib/supabase";
 
 const ADMINS = [
-  "TU_DISCORD_USER_ID"
+  "928272881799028756"
 ];
 
 type Horse = {
@@ -166,6 +166,18 @@ export default function Home() {
     horseId: string
   ) {
 
+    if (!user) {
+
+      alert(
+        "Zaloguj się Discordem aby rezerwować."
+      );
+
+      await loginWithDiscord();
+
+      return;
+
+    }
+
     if (!selectedDate) return;
 
     const date =
@@ -234,6 +246,18 @@ export default function Home() {
   async function cancelBooking(
     horseId: string
   ) {
+
+    if (!user) {
+
+      alert(
+        "Zaloguj się Discordem."
+      );
+
+      await loginWithDiscord();
+
+      return;
+
+    }
 
     if (!selectedDate) return;
 
@@ -339,45 +363,54 @@ export default function Home() {
       user.id
     );
 
-  if (!user) {
-
-    return (
-
-      <div className="
-        h-screen
-        flex
-        items-center
-        justify-center
-        bg-gray-100
-      ">
-
-        <button
-          onClick={loginWithDiscord}
-          className="
-            bg-indigo-600
-            text-white
-            px-8
-            py-5
-            rounded-2xl
-            text-2xl
-            font-bold
-            shadow-lg
-          "
-        >
-
-          Zaloguj Discordem
-
-        </button>
-
-      </div>
-
-    );
-
-  }
-
   return (
 
     <div className="max-w-6xl mx-auto p-5 md:p-10">
+
+      {!user && (
+
+        <div className="
+          bg-indigo-100
+          border
+          border-indigo-300
+          p-4
+          rounded-2xl
+          mb-6
+          flex
+          flex-col
+          md:flex-row
+          items-start
+          md:items-center
+          justify-between
+          gap-4
+        ">
+
+          <p className="font-semibold">
+
+            Możesz przeglądać kalendarz bez logowania.
+            Aby rezerwować konie —
+            zaloguj się Discordem.
+
+          </p>
+
+          <button
+            onClick={loginWithDiscord}
+            className="
+              bg-indigo-600
+              text-white
+              px-4
+              py-2
+              rounded-xl
+            "
+          >
+
+            Zaloguj Discordem
+
+          </button>
+
+        </div>
+
+      )}
 
       <div className="
         flex
@@ -395,58 +428,66 @@ export default function Home() {
             📅 Rezerwacje koni
           </h1>
 
-          <p className="mt-3 text-lg">
+          {user && (
 
-            Zalogowano jako{" "}
+            <p className="mt-3 text-lg">
 
-            <span className="font-bold">
+              Zalogowano jako{" "}
 
-              {
-                user
-                  .user_metadata
-                  .full_name
+              <span className="font-bold">
+
+                {
+                  user
+                    .user_metadata
+                    .full_name
+                }
+
+              </span>
+
+            </p>
+
+          )}
+
+        </div>
+
+        {user && (
+
+          <div className="
+            flex
+            items-center
+            gap-4
+          ">
+
+            <img
+              src={
+                user.user_metadata
+                  .avatar_url
               }
+              alt="avatar"
+              className="
+                w-16
+                h-16
+                rounded-full
+              "
+            />
 
-            </span>
+            <button
+              onClick={logout}
+              className="
+                bg-gray-200
+                px-4
+                py-2
+                rounded-xl
+              "
+            >
 
-          </p>
+              Wyloguj
 
-        </div>
+            </button>
 
-        <div className="
-          flex
-          items-center
-          gap-4
-        ">
+          </div>
 
-          <img
-            src={
-              user.user_metadata
-                .avatar_url
-            }
-            alt="avatar"
-            className="
-              w-16
-              h-16
-              rounded-full
-            "
-          />
-
-          <button
-            onClick={logout}
-            className="
-              bg-gray-200
-              px-4
-              py-2
-              rounded-xl
-            "
-          >
-
-            Wyloguj
-
-          </button>
-
-        </div>
+        )}
 
       </div>
 
@@ -579,6 +620,7 @@ export default function Home() {
 
             const canCancel =
               booking &&
+              user &&
               (
                 booking.user_id ===
                   user.id ||
