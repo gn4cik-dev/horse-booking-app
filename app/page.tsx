@@ -39,16 +39,47 @@ export default function Home() {
       new Date()
     );
 
-  useEffect(() => {
+  const [authError, setAuthError] =
+    useState("");
+    );
 
-    loadUser();
-    loadHorses();
-    loadBookings();
+useEffect(() => {
 
-    const channel =
-      supabase.channel(
-        "realtime-bookings"
-      );
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const errorDescription =
+    params.get(
+      "error_description"
+    );
+
+  if (
+    errorDescription?.includes(
+      "Error getting user email"
+    )
+  ) {
+
+    setAuthError(
+      "Nie udało się zalogować. Sprawdź w Discord → Ustawienia → Moje konto, czy adres e-mail jest zweryfikowany."
+
+      window.history.replaceState(
+        {},
+        "",
+        window.location.pathname
+    );
+
+  }
+
+  loadUser();
+  loadHorses();
+  loadBookings();
+
+  const channel =
+    supabase.channel(
+      "realtime-bookings"
+    );
 
     channel
       .on(
@@ -367,6 +398,26 @@ export default function Home() {
 
     <div className="max-w-6xl mx-auto p-5 md:p-10">
 
+      {authError && (
+
+          <div
+            className="
+              bg-red-100
+              border
+              border-red-300
+              text-red-800
+              p-4
+              rounded-2xl
+              mb-6
+            "
+          >
+
+            ❌ {authError}
+
+          </div>
+
+      )}
+
       {!user && (
 
         <div className="
@@ -389,7 +440,7 @@ export default function Home() {
 
             Możesz przeglądać kalendarz bez logowania.
             Aby rezerwować konie —
-            zaloguj się Discordem.
+            zaloguj się przez Discorda.
 
           </p>
 
@@ -404,7 +455,7 @@ export default function Home() {
             "
           >
 
-            Zaloguj Discordem
+            Zaloguj
 
           </button>
 
