@@ -41,7 +41,6 @@ export default function Home() {
 
   const [authError, setAuthError] =
     useState("");
-    );
 
 useEffect(() => {
 
@@ -63,6 +62,7 @@ useEffect(() => {
 
     setAuthError(
       "Nie udało się zalogować. Sprawdź w Discord → Ustawienia → Moje konto, czy adres e-mail jest zweryfikowany."
+    );
 
       window.history.replaceState(
         {},
