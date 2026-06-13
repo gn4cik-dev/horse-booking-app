@@ -7,7 +7,7 @@ import "react-day-picker/dist/style.css";
 import { supabase } from "@/lib/supabase";
 
 const ADMINS = [
-  "928272881799028756"
+  "83a7c8b7-3d86-43f7-ba93-48a3fcee2d06"
 ];
 
 type Horse = {
