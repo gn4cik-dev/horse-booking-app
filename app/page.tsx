@@ -21,6 +21,7 @@ type Booking = {
   booking_date: string;
   username: string;
   user_id: string;
+  booking_type?: string;
 };
 
 export default function Home() {
@@ -41,6 +42,9 @@ export default function Home() {
 
   const [authError, setAuthError] =
     useState("");
+
+  const [bookingType, setBookingType] =
+    useState("Rezerwacja");
 
 useEffect(() => {
 
@@ -259,7 +263,11 @@ useEffect(() => {
             user_id: currentUser.id,
             username:
               currentUser.user_metadata
-                .full_name
+                .full_name,
+            booking_type:
+              isAdmin
+                ? bookingType
+                : "Rezerwacja"
           }
         ]);
 
@@ -542,6 +550,50 @@ useEffect(() => {
 
       </div>
 
+      {isAdmin && (
+
+      <div
+        className="
+          bg-yellow-50
+          border
+          border-yellow-300
+          p-4
+          rounded-2xl
+          mb-6
+        "
+      >
+
+        <p className="font-semibold mb-2">
+          Rezerwacja administracyjna
+        </p>
+
+        <select
+          value={bookingType}
+          onChange={(e) =>
+            setBookingType(
+              e.target.value
+            )
+          }
+          className="
+            border
+            rounded-xl
+            px-3
+            py-2
+          "
+        >
+
+          <option>Rezerwacja</option>
+          <option>Kowal</option>
+          <option>Fizjoterapia</option>
+          <option>Weterynarz</option>
+          <option>Niedostępny</option>
+
+        </select>
+
+      </div>
+
+    )}
+
       <div className="
         bg-white
         rounded-3xl
@@ -710,7 +762,10 @@ useEffect(() => {
                       </p>
 
                       <p>
-                        {booking.username}
+                          {booking.booking_type ===
+                          "Rezerwacja"
+                            ? booking.username
+                            : booking.booking_type}
                       </p>
 
                     </div>
