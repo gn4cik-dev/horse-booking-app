@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
+import { pl } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
 
 import { supabase } from "@/lib/supabase";
@@ -169,7 +170,7 @@ export default function Home() {
     const today =
       formatDate(new Date());
 
-    if (date < today) {
+    if (!isAdmin && date < today) {
 
       alert(
         "Nie można rezerwować przeszłych dat."
@@ -334,6 +335,8 @@ export default function Home() {
 
         <DayPicker
           mode="single"
+          locale={pl}
+          weekStartsOn={1}
           selected={selectedDate}
           onSelect={setSelectedDate}
           className="text-black"
