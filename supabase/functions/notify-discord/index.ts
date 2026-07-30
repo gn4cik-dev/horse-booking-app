@@ -78,19 +78,51 @@ Deno.serve(async (req) => {
     const isEdit = type === "UPDATE";
     const typeLabel = row.ride_type ?? row.booking_type;
 
-    let content = [
-      isCancel
-        ? "❌ **Rezerwacja anulowana**"
-        : isEdit
-        ? "✏️ **Rezerwacja zmieniona**"
-        : "🐴 **Nowa rezerwacja**",
-      "",
-      `**Użytkownik:** ${row.username}`,
-      `**Koń:** ${horse?.name ?? "?"}`,
-      `**Data:** ${formatDatePl(row.booking_date)}`,
-      `**Godzina:** ${formatTime(row.start_time)}–${formatTime(row.end_time)}`,
-      `**Typ:** ${typeLabel}`,
-    ].join("\n");
+    const dateMoved =
+      isEdit && old_record && old_record.booking_date !== row.booking_date;
+
+    let content: string;
+
+    if (dateMoved && old_record) {
+      // Przeniesienie na inny dzień — pokaż wyraźnie "z" i "na".
+      content = [
+        "📅 **Rezerwacja przeniesiona**",
+        "",
+        `**Użytkownik:** ${row.username}`,
+        `**Koń:** ${horse?.name ?? "?"}`,
+        `**Z:** ${formatDatePl(old_record.booking_date)}, ${formatTime(
+          old_record.start_time
+        )}–${formatTime(old_record.end_time)}`,
+        `**Na:** ${formatDatePl(row.booking_date)}, ${formatTime(
+          row.start_time
+        )}–${formatTime(row.end_time)}`,
+        `**Typ:** ${typeLabel}`,
+      ].join("\n");
+    } else if (isEdit && old_record) {
+      // Ten sam dzień, zmienione tylko godziny/typ.
+      content = [
+        "✏️ **Rezerwacja zmieniona**",
+        "",
+        `**Użytkownik:** ${row.username}`,
+        `**Koń:** ${horse?.name ?? "?"}`,
+        `**Data:** ${formatDatePl(row.booking_date)}`,
+        `**Poprzednio:** ${formatTime(old_record.start_time)}–${formatTime(
+          old_record.end_time
+        )}`,
+        `**Teraz:** ${formatTime(row.start_time)}–${formatTime(row.end_time)}`,
+        `**Typ:** ${typeLabel}`,
+      ].join("\n");
+    } else {
+      content = [
+        isCancel ? "❌ **Rezerwacja anulowana**" : "🐴 **Nowa rezerwacja**",
+        "",
+        `**Użytkownik:** ${row.username}`,
+        `**Koń:** ${horse?.name ?? "?"}`,
+        `**Data:** ${formatDatePl(row.booking_date)}`,
+        `**Godzina:** ${formatTime(row.start_time)}–${formatTime(row.end_time)}`,
+        `**Typ:** ${typeLabel}`,
+      ].join("\n");
+    }
 
     // Wzmianki: kto subskrybuje TEGO konia, z pominięciem osoby, której
     // dotyczy rezerwacja (nie ma sensu wzmiankować kogoś o jego własnej

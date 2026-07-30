@@ -75,6 +75,7 @@ export default function Home() {
   const [editingBookingId, setEditingBookingId] = useState<string | null>(
     null
   );
+  const [formDate, setFormDate] = useState("");
   const [formStart, setFormStart] = useState(DEFAULT_START);
   const [formEnd, setFormEnd] = useState(DEFAULT_END);
   const [formRideType, setFormRideType] = useState<RideType | "">("");
@@ -283,6 +284,7 @@ export default function Home() {
   function openAddForm(horseId: string) {
     setFormHorseId(horseId);
     setEditingBookingId(null);
+    setFormDate(selectedDate ? formatDate(selectedDate) : "");
     setFormStart(DEFAULT_START);
     setFormEnd(DEFAULT_END);
     setFormRideType("");
@@ -293,6 +295,7 @@ export default function Home() {
   function openEditForm(booking: Booking) {
     setFormHorseId(booking.horse_id);
     setEditingBookingId(booking.id);
+    setFormDate(booking.booking_date);
     setFormStart(booking.start_time.slice(0, 5));
     setFormEnd(booking.end_time.slice(0, 5));
     setFormRideType(booking.ride_type ?? "");
@@ -335,12 +338,18 @@ export default function Home() {
       }
     }
 
-    // Edycja zmienia tylko godziny/typ — data i koń pozostają te, do
-    // których rezerwacja już należy (widoczne w tym samym dniu).
-    const date = isEditing ? editedBooking!.booking_date : formatDate(selectedDate);
+    // Edycja teraz może też przenieść rezerwację na inny dzień —
+    // formDate jest edytowalne w formularzu (patrz openEditForm), więc
+    // nie trzymamy się już sztywno editedBooking.booking_date.
+    const date = isEditing ? formDate : formatDate(selectedDate);
     const category: ReservationCategory = isAdmin ? formCategory : "Rezerwacja";
 
-    if (!isEditing && !isAdmin && date < formatDate(today)) {
+    if (!date) {
+      setFormError("Wybierz datę.");
+      return;
+    }
+
+    if (!isAdmin && date < formatDate(today)) {
       setFormError("Nie można rezerwować przeszłych dat.");
       return;
     }
@@ -373,28 +382,33 @@ export default function Home() {
 
     if (!currentUser) return;
 
-    const { error } = isEditing
+    const { data: writeResult, error } = isEditing
       ? await supabase
           .from("bookings")
           .update({
+            booking_date: date,
             start_time: formStart,
             end_time: formEnd,
             booking_type: category,
             ride_type: category === "Rezerwacja" ? formRideType : null,
           })
           .eq("id", editingBookingId)
-      : await supabase.from("bookings").insert([
-          {
-            horse_id: horseId,
-            booking_date: date,
-            start_time: formStart,
-            end_time: formEnd,
-            user_id: currentUser.id,
-            username: currentUser.user_metadata.full_name,
-            booking_type: category,
-            ride_type: category === "Rezerwacja" ? formRideType : null,
-          },
-        ]);
+          .select()
+      : await supabase
+          .from("bookings")
+          .insert([
+            {
+              horse_id: horseId,
+              booking_date: date,
+              start_time: formStart,
+              end_time: formEnd,
+              user_id: currentUser.id,
+              username: currentUser.user_metadata.full_name,
+              booking_type: category,
+              ride_type: category === "Rezerwacja" ? formRideType : null,
+            },
+          ])
+          .select();
 
     if (error) {
       // 23P01 = naruszenie EXCLUDE CONSTRAINT (nakładające się godziny) —
@@ -405,6 +419,18 @@ export default function Home() {
       } else {
         setFormError(error.message);
       }
+      return;
+    }
+
+    // Brak błędu, ale i brak wiersza w odpowiedzi = RLS po cichu
+    // odrzuciło operację (0 wierszy spełniło politykę). Bez tej
+    // sprawdzania UI wyglądałoby, jakby zapis się udał, mimo że baza
+    // nic nie zmieniła — dokładnie to zgłoszenie, które naprawia
+    // migracja 0005_bookings_update_policy.sql.
+    if (!writeResult || writeResult.length === 0) {
+      setFormError(
+        "Baza danych odrzuciła zapis (brak uprawnień RLS) — sprawdź, czy migracja 0005_bookings_update_policy.sql została uruchomiona."
+      );
       return;
     }
 
@@ -691,6 +717,24 @@ export default function Home() {
                       ? "Edytuj rezerwację"
                       : "Nowa rezerwacja"}
                   </h3>
+
+                  {editingBookingId && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold mb-1">
+                        Data
+                      </label>
+                      <input
+                        type="date"
+                        value={formDate}
+                        onChange={(e) => setFormDate(e.target.value)}
+                        className="border rounded-xl px-3 py-2 w-full md:w-auto"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Zmiana daty przenosi rezerwację na inny dzień —
+                        bez konieczności anulowania.
+                      </p>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-semibold mb-1">
